@@ -322,6 +322,15 @@ main {
   opacity: 0.16;
 }
 
+.season-number small {
+  font-family: var(--body);
+  font-size: 0.16em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: top;
+}
+
 .season-label {
   margin-bottom: 0.4rem;
   font-size: 0.72rem;

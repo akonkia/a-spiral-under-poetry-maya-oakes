@@ -165,11 +165,12 @@ File.write(File.join(asset_dir, "site.js"), site_js)
 File.write(File.join(OUTPUT, ".nojekyll"), "")
 
 chapter_cards = SECTIONS.reject { |name, _| name == "Prologue" }.map do |name, section|
-  count = map.count { |entry| entry["section"] == name }
+  first_entry = map.find { |entry| entry["section"] == name }
+  start_page = first_entry["global_position"] + 1
   <<~HTML
     <a class="season-card season-#{section[:slug]}" href="chapters/#{section[:slug]}/index.html">
       <img class="season-art" src="assets/booklet/#{section[:artwork]}.webp" alt="" loading="lazy">
-      <span class="season-number">#{format("%02d", count)}</span>
+      <span class="season-number"><small>p.</small> #{format("%02d", start_page)}</span>
       <span class="season-label">#{escape(section_overline(section))}</span>
       <strong>#{escape(section_heading(section))}</strong>
       <span>#{escape(section[:description])}</span>
