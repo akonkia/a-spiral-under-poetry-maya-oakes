@@ -99,6 +99,7 @@ def page_shell(title:, description:, body:, depth:, section: nil, extra_class: n
         <nav aria-label="Primary navigation">
           <a href="#{prefix}read/index.html">Read</a>
           <a href="#{prefix}read/index.html#contents">Contents</a>
+          <a href="#{prefix}topics/index.html">Topics</a>
           <a href="#{prefix}about/index.html">About</a>
           <button class="text-button" type="button" data-random-poem>Random poem</button>
         </nav>
@@ -134,8 +135,26 @@ def poem_lines(text)
   end.join("\n")
 end
 
+def tag_links(tags, prefix:)
+  return "" if tags.empty?
+
+  links = tags.map do |tag|
+    "<a href=\"#{prefix}topics/#{escape(tag["tag_slug"])}/index.html\">#{escape(tag["tag"])}</a>"
+  end.join
+  "<div class=\"poem-tags\" aria-label=\"Topics\">#{links}</div>"
+end
+
 inventory = CSV.read(File.join(ROOT, "poems.csv"), headers: true).each_with_object({}) do |row, rows|
   rows[row["slug"]] = row.to_h
+end
+
+original_tags = CSV.read(File.join(ROOT, "poem-tags.csv"), headers: true)
+  .select { |row| row["is_topic"] == "true" }
+  .map(&:to_h)
+editorial_tags = CSV.read(File.join(ROOT, "editorial-tags.csv"), headers: true).map(&:to_h)
+tags_by_poem = (original_tags + editorial_tags).group_by { |row| row["slug"] }
+tags_by_poem.transform_values! do |rows|
+  rows.uniq { |row| row["tag_slug"] }.sort_by { |row| row["tag"].downcase }
 end
 
 map = CSV.read(File.join(ROOT, "chapter-map.csv"), headers: true).map(&:to_h)
@@ -143,6 +162,7 @@ map.each do |entry|
   source = inventory.fetch(entry["slug"])
   entry.merge!(source)
   entry["position"] = entry["position"].to_i
+  entry["tags"] = tags_by_poem.fetch(entry["slug"], [])
 end
 
 map.sort_by! { |entry| [SECTIONS.keys.index(entry["section"]), entry["position"]] }
@@ -151,6 +171,13 @@ map.each_with_index do |entry, index|
   entry["previous"] = map[index - 1] if index.positive?
   entry["next"] = map[index + 1]
 end
+
+topics = map.each_with_object({}) do |entry, index|
+  entry["tags"].each do |tag|
+    topic = index[tag["tag_slug"]] ||= { "tag" => tag["tag"], "tag_slug" => tag["tag_slug"], "poems" => [] }
+    topic["poems"] << entry
+  end
+end.values.sort_by { |topic| topic["tag"].downcase }
 
 poem_links_json = JSON.generate(map.map { |entry| "poems/#{entry["slug"]}/index.html" })
 
@@ -236,6 +263,73 @@ home = page_shell(
 )
 write_page("index.html", home)
 
+topic_links = topics.map do |topic|
+  count = topic["poems"].size
+  <<~HTML
+    <li>
+      <a href="#{topic["tag_slug"]}/index.html">
+        <span>#{escape(topic["tag"])}</span>
+        <small>#{count} #{count == 1 ? "poem" : "poems"}</small>
+      </a>
+    </li>
+  HTML
+end.join
+
+topics_body = <<~HTML
+  <header class="topic-hero">
+    <p class="eyebrow">Ways through the collection</p>
+    <h1>Topics</h1>
+    <p>Follow a subject across seasons, voices, and forms.</p>
+  </header>
+  <ul class="topic-cloud">
+    #{topic_links}
+  </ul>
+HTML
+
+write_page(
+  "topics/index.html",
+  page_shell(
+    title: "Topics",
+    description: "Browse the poems in A Spiral Under by topic.",
+    body: topics_body,
+    depth: 1,
+    extra_class: "topics-page"
+  )
+)
+
+topics.each do |topic|
+  poems = topic["poems"].map do |entry|
+    <<~HTML
+      <li>
+        <a href="../../poems/#{entry["slug"]}/index.html">
+          <span>#{escape(entry["title"])}</span>
+          <small>#{escape(entry["section"])} · p. #{format("%02d", entry["global_position"] + 1)}</small>
+        </a>
+      </li>
+    HTML
+  end.join
+
+  body = <<~HTML
+    <header class="topic-hero">
+      <a class="chapter-kicker" href="../index.html">All topics</a>
+      <h1>#{escape(topic["tag"])}</h1>
+      <p>#{topic["poems"].size} #{topic["poems"].size == 1 ? "poem" : "poems"} in this collection.</p>
+    </header>
+    <ul class="poem-list topic-poem-list">#{poems}</ul>
+  HTML
+
+  write_page(
+    "topics/#{topic["tag_slug"]}/index.html",
+    page_shell(
+      title: topic["tag"],
+      description: "Poems about #{topic["tag"]} in A Spiral Under.",
+      body: body,
+      depth: 2,
+      extra_class: "topic-page"
+    )
+  )
+end
+
 reader_contents = SECTIONS.map do |name, section|
   entries = map.select { |entry| entry["section"] == name }.sort_by { |entry| entry["position"] }
   next if entries.empty?
@@ -246,6 +340,7 @@ reader_contents = SECTIONS.map do |name, section|
         <p class="reader-position">#{format("%02d", entry["global_position"] + 1)} / #{format("%02d", map.size)}</p>
         <h2>#{escape(entry["title"])}</h2>
         <div class="poem-text">#{poem_lines(poem_text(entry["slug"]))}</div>
+        #{tag_links(entry["tags"], prefix: "../")}
         <a class="reader-permalink" href="../poems/#{entry["slug"]}/index.html">Permanent page</a>
       </article>
     HTML
@@ -389,6 +484,7 @@ map.each do |entry|
         <h1>#{escape(entry["title"])}</h1>
       </header>
       <div class="poem-text" aria-label="Poem text">#{poem_lines(poem_text(entry["slug"]))}</div>
+      #{tag_links(entry["tags"], prefix: "../../")}
       <footer class="poem-source">
         <a href="#{escape(entry["source_url"])}">View the original publication ↗</a>
       </footer>

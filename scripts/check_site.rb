@@ -24,9 +24,11 @@ end
 reader = Nokogiri::HTML(File.read(root + "read/index.html"))
 poems = reader.css("[data-reader-poem]")
 contents_links = reader.css("#contents .reader-toc-chapter li a")
+tagged_reader_poems = poems.count { |poem| poem.css(".poem-tags a").any? }
 errors << "reader contains #{poems.size} poems, expected 47" unless poems.size == 47
 errors << "duplicate reader poem anchors" unless poems.map { |poem| poem["id"] }.uniq.size == poems.size
 errors << "contents contains #{contents_links.size} poems, expected 47" unless contents_links.size == 47
+errors << "only #{tagged_reader_poems} reader poems have tags" unless tagged_reader_poems == poems.size
 
 if errors.any?
   warn errors.join("\n")
@@ -36,3 +38,4 @@ end
 puts "Checked #{html_files.size} HTML files; all local links resolve."
 puts "Continuous reader contains #{poems.size} uniquely anchored poems."
 puts "Table of contents lists all #{contents_links.size} poems."
+puts "All #{tagged_reader_poems} poems have linked topic tags."
