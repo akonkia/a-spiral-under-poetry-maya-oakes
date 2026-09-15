@@ -148,11 +148,8 @@ inventory = CSV.read(File.join(ROOT, "poems.csv"), headers: true).each_with_obje
   rows[row["slug"]] = row.to_h
 end
 
-original_tags = CSV.read(File.join(ROOT, "poem-tags.csv"), headers: true)
-  .select { |row| row["is_topic"] == "true" }
-  .map(&:to_h)
-editorial_tags = CSV.read(File.join(ROOT, "editorial-tags.csv"), headers: true).map(&:to_h)
-tags_by_poem = (original_tags + editorial_tags).group_by { |row| row["slug"] }
+curated_topics = CSV.read(File.join(ROOT, "curated-topics.csv"), headers: true).map(&:to_h)
+tags_by_poem = curated_topics.group_by { |row| row["slug"] }
 tags_by_poem.transform_values! do |rows|
   rows.uniq { |row| row["tag_slug"] }.sort_by { |row| row["tag"].downcase }
 end
@@ -262,6 +259,8 @@ home = page_shell(
   extra_class: "home-page"
 )
 write_page("index.html", home)
+
+FileUtils.rm_rf(File.join(OUTPUT, "topics"))
 
 topic_links = topics.map do |topic|
   count = topic["poems"].size

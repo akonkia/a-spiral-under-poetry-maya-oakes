@@ -7,8 +7,8 @@ A static GitHub Pages portfolio and continuous digital manuscript for Maya Oakes
 - `docs/poems/` contains one permanent page per poem.
 - `content/poems/` contains the clean source text for all poems.
 - `chapter-map.csv` controls manuscript order and chapter placement.
-- `poem-tags.csv` preserves topic tags recovered from the original Substack posts.
-- `editorial-tags.csv` adds topic tags for poems that were originally untagged.
+- `poem-tags.csv` preserves the complete tag archive recovered from the original Substack posts.
+- `curated-topics.csv` provides the smaller, consistent topic vocabulary shown on the site.
 - `assets/booklet/` contains chapter motifs extracted from Maya's earlier printed booklet and adapted for the web layout.
 
 ## Build
