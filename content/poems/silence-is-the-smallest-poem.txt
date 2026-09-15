@@ -1,0 +1,3 @@
+Silence is the smallest poem.
+
+(on the nature of recursion)
