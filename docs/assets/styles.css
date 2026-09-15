@@ -564,7 +564,7 @@ main {
 }
 
 .poem-header {
-  margin-bottom: clamp(4rem, 9vw, 7rem);
+  margin-bottom: 2rem;
 }
 
 .chapter-kicker {
@@ -580,8 +580,9 @@ main {
 
 .poem-header h1 {
   max-width: 700px;
-  font-size: clamp(3.5rem, 8vw, 7rem);
-  line-height: 0.98;
+  font-size: clamp(2rem, 4.5vw, 3.6rem);
+  font-weight: 700;
+  line-height: 1.08;
 }
 
 .poem-text {
