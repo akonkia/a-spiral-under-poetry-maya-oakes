@@ -204,8 +204,9 @@ end.join
 
 all_poems = map.map do |entry|
   persona = entry["persona"].to_s.empty? ? SECTIONS.fetch(entry["section"])[:persona] : entry["persona"]
+  poem_topics = entry["tags"].map { |tag| tag["tag"].downcase }.join(" ")
   <<~HTML
-    <li data-poem-item data-section="#{escape(entry["section"].downcase)}" data-search="#{escape(entry["title"].downcase)}">
+    <li data-poem-item data-topics="#{escape(poem_topics)}">
       <a href="poems/#{entry["slug"]}/index.html">
         <span>#{escape(entry["title"])}</span>
         <small>#{escape(entry["section"])} · #{escape(persona)}</small>
@@ -213,6 +214,8 @@ all_poems = map.map do |entry|
     </li>
   HTML
 end.join
+
+topic_options = topics.map { |topic| "<option value=\"#{escape(topic["tag"])}\"></option>" }.join
 
 home_body = <<~HTML
   <section class="hero">
@@ -236,18 +239,19 @@ home_body = <<~HTML
   <section class="poem-index" id="all-poems">
     <div class="index-heading">
       <div>
-        <p class="eyebrow">Complete index</p>
-        <h2>All poems</h2>
+        <p class="eyebrow">Browse by theme</p>
+        <h2>What do you want to read about?</h2>
       </div>
       <label class="search-field">
-        <span>Find a poem</span>
-        <input type="search" placeholder="Search by title" data-poem-search>
+        <span>Topic</span>
+        <input type="search" placeholder="Memory, love, war…" list="topic-options" data-poem-search>
+        <datalist id="topic-options">#{topic_options}</datalist>
       </label>
     </div>
     <ul class="poem-list" data-poem-list>
       #{all_poems}
     </ul>
-    <p class="empty-state" data-empty-state hidden>No poem matches that title.</p>
+    <p class="empty-state" data-empty-state hidden>No poems match that topic.</p>
   </section>
 HTML
 

@@ -22,7 +22,7 @@ if (search) {
     let visible = 0;
 
     items.forEach((item) => {
-      const matches = item.dataset.search.includes(query) || item.dataset.section.includes(query);
+      const matches = item.dataset.topics.includes(query);
       item.hidden = !matches;
       visible += matches ? 1 : 0;
     });
