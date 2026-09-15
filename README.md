@@ -29,6 +29,10 @@ The generator rebuilds the publishable `docs/` directory without a framework or 
 
 GitHub will provide the public site address after the first deployment.
 
+## Copyright
+
+Copyright © 2025-2026 Maya Oakes. All rights reserved. See `LICENSE`.
+
 ## Inventory
 
 Confirmed poems: **47**

@@ -107,7 +107,7 @@ def page_shell(title:, description:, body:, depth:, section: nil, extra_class: n
         #{body}
       </main>
       <footer class="site-footer">
-        <p>Words by Maya Oakes</p>
+        <p>© 2025-2026 Maya Oakes. All rights reserved.</p>
         <p><a href="https://dervendaur.substack.com/">Originally published at A Spiral Under on Substack</a></p>
       </footer>
     </body>
