@@ -8,6 +8,11 @@ require "json"
 ROOT = File.expand_path("..", __dir__)
 OUTPUT = File.join(ROOT, "docs")
 CONTENT = File.join(ROOT, "content", "poems")
+SITE_URL = "https://akonkia.github.io/a-spiral-under-poetry-maya-oakes"
+SITE_NAME = "A Spiral Under"
+AUTHOR_NAME = "Maya Oakes"
+SOCIAL_IMAGE_URL = "#{SITE_URL}/assets/booklet/spiral.webp"
+GENERATED_PAGES = []
 
 SECTIONS = {
   "Prologue" => {
@@ -71,10 +76,54 @@ def relative_prefix(depth)
   "../" * depth
 end
 
-def page_shell(title:, description:, body:, depth:, section: nil, extra_class: nil)
+def structured_data(title:, description:, schema_type:, schema_data:)
+  data = {
+    "@context" => "https://schema.org",
+    "@type" => schema_type,
+    "name" => title,
+    "description" => description,
+    "url" => "__CANONICAL_URL__",
+    "inLanguage" => "en"
+  }
+
+  if schema_type == "Book"
+    data.merge!(
+      "author" => { "@type" => "Person", "name" => AUTHOR_NAME },
+      "genre" => "Poetry"
+    )
+  elsif schema_type == "CreativeWork"
+    data.merge!(
+      "author" => { "@type" => "Person", "name" => AUTHOR_NAME },
+      "genre" => "Poetry",
+      "isPartOf" => { "@type" => "Book", "name" => SITE_NAME, "url" => "#{SITE_URL}/" }
+    )
+  else
+    data["isPartOf"] = { "@type" => "WebSite", "name" => SITE_NAME, "url" => "#{SITE_URL}/" }
+  end
+
+  JSON.generate(data.merge(schema_data))
+end
+
+def canonical_url(path)
+  return "#{SITE_URL}/" if path == "index.html"
+  return "#{SITE_URL}/#{File.dirname(path)}/" if File.basename(path) == "index.html"
+
+  "#{SITE_URL}/#{path}"
+end
+
+def page_shell(title:, description:, body:, depth:, section: nil, extra_class: nil, schema_type: "WebPage", schema_data: {}, indexable: true)
   prefix = relative_prefix(depth)
   section_class = section ? " theme-#{SECTIONS.fetch(section)[:slug]}" : ""
   classes = ["site", section_class, extra_class].compact.join(" ")
+  full_title = "#{title} · #{SITE_NAME}"
+  robots = indexable ? "index, follow" : "noindex, follow"
+  open_graph_type = schema_type == "CreativeWork" ? "article" : "website"
+  json_ld = structured_data(
+    title: title,
+    description: description,
+    schema_type: schema_type,
+    schema_data: schema_data
+  )
 
   <<~HTML
     <!doctype html>
@@ -83,11 +132,27 @@ def page_shell(title:, description:, body:, depth:, section: nil, extra_class: n
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <meta name="description" content="#{escape(description)}">
+      <meta name="author" content="#{AUTHOR_NAME}">
+      <meta name="robots" content="#{robots}">
       <meta name="theme-color" content="#ffffff">
-      <title>#{escape(title)} · A Spiral Under</title>
+      <meta property="og:site_name" content="#{SITE_NAME}">
+      <meta property="og:type" content="#{open_graph_type}">
+      <meta property="og:title" content="#{escape(full_title)}">
+      <meta property="og:description" content="#{escape(description)}">
+      <meta property="og:url" content="__CANONICAL_URL__">
+      <meta property="og:image" content="#{SOCIAL_IMAGE_URL}">
+      <meta property="og:image:alt" content="A Spiral Under, a poetry collection by Maya Oakes">
+      <meta name="twitter:card" content="summary">
+      <meta name="twitter:title" content="#{escape(full_title)}">
+      <meta name="twitter:description" content="#{escape(description)}">
+      <meta name="twitter:image" content="#{SOCIAL_IMAGE_URL}">
+      <title>#{escape(full_title)}</title>
+      <link rel="canonical" href="__CANONICAL_URL__">
+      <link rel="sitemap" type="application/xml" href="#{SITE_URL}/sitemap.xml">
       <link rel="icon" href="#{prefix}assets/logo.png" type="image/png">
       <link rel="stylesheet" href="#{prefix}assets/styles.css">
       <script defer src="#{prefix}assets/site.js"></script>
+      <script type="application/ld+json">#{json_ld}</script>
     </head>
     <body class="#{classes.strip}">
       <a class="skip-link" href="#content">Skip to content</a>
@@ -118,8 +183,10 @@ end
 
 def write_page(path, content)
   destination = File.join(OUTPUT, path)
+  canonical = canonical_url(path)
   FileUtils.mkdir_p(File.dirname(destination))
-  File.write(destination, content)
+  File.write(destination, content.gsub("__CANONICAL_URL__", canonical))
+  GENERATED_PAGES << { path: path, url: canonical } unless path == "404.html"
 end
 
 def poem_text(slug)
@@ -273,7 +340,20 @@ home = page_shell(
   description: "A Spiral Under, a seasonal poetry portfolio by Maya Oakes.",
   body: home_body,
   depth: 0,
-  extra_class: "home-page"
+  extra_class: "home-page",
+  schema_type: "Book",
+  schema_data: {
+    "name" => SITE_NAME,
+    "author" => { "@type" => "Person", "name" => AUTHOR_NAME },
+    "genre" => "Poetry",
+    "hasPart" => map.map do |entry|
+      {
+        "@type" => "CreativeWork",
+        "name" => entry["title"],
+        "url" => "#{SITE_URL}/poems/#{entry["slug"]}/"
+      }
+    end
+  }
 )
 write_page("index.html", home)
 
@@ -482,6 +562,8 @@ end
 
 map.each do |entry|
   section = SECTIONS.fetch(entry["section"])
+  topic_names = entry["tags"].map { |tag| tag["tag"] }
+  poem_description = "#{entry["title"]}, a poem by Maya Oakes exploring #{topic_names.join(", ").downcase}."
   previous_link = if entry["previous"]
     "<a class=\"previous\" href=\"../#{entry["previous"]["slug"]}/index.html\"><span>Previous</span>#{escape(entry["previous"]["title"])}</a>"
   else
@@ -517,11 +599,18 @@ map.each do |entry|
     "poems/#{entry["slug"]}/index.html",
     page_shell(
       title: entry["title"],
-      description: "#{entry["title"]}, a poem by Maya Oakes.",
+      description: poem_description,
       body: body,
       depth: 2,
       section: entry["section"],
-      extra_class: "reading-page"
+      extra_class: "reading-page",
+      schema_type: "CreativeWork",
+      schema_data: {
+        "headline" => entry["title"],
+        "datePublished" => entry["published_date"],
+        "keywords" => topic_names,
+        "sameAs" => entry["source_url"]
+      }
     )
   )
 end
@@ -554,6 +643,7 @@ write_page("404.html", page_shell(
   title: "Page not found",
   description: "This page could not be found.",
   depth: 0,
+  indexable: false,
   body: <<~HTML
     <section class="not-found">
       <p class="eyebrow">404</p>
@@ -564,4 +654,26 @@ write_page("404.html", page_shell(
   HTML
 ))
 
+sitemap_urls = GENERATED_PAGES.map do |page|
+  <<~XML
+    <url>
+      <loc>#{escape(page[:url])}</loc>
+    </url>
+  XML
+end.join
+
+File.write(File.join(OUTPUT, "sitemap.xml"), <<~XML)
+  <?xml version="1.0" encoding="UTF-8"?>
+  <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  #{sitemap_urls}</urlset>
+XML
+
+File.write(File.join(OUTPUT, "robots.txt"), <<~TEXT)
+  User-agent: *
+  Allow: /
+
+  Sitemap: #{SITE_URL}/sitemap.xml
+TEXT
+
 puts "Built #{map.size} poem pages and #{SECTIONS.size} section pages in #{OUTPUT}"
+puts "Generated sitemap.xml with #{GENERATED_PAGES.size} canonical URLs."

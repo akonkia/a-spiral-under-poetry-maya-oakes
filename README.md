@@ -11,6 +11,7 @@ A static GitHub Pages portfolio and continuous digital manuscript for Maya Oakes
 - `curated-topics.csv` provides the smaller, consistent topic vocabulary shown on the site.
 - `assets/booklet/` contains chapter motifs extracted from Maya's earlier printed booklet and adapted for the web layout.
 - `assets/poems/` contains the original poem illustrations recovered from that booklet.
+- `docs/sitemap.xml` and `docs/robots.txt` are generated with the site, alongside canonical, social, and structured metadata on every page.
 
 ## Build
 

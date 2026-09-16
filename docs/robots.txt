@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://akonkia.github.io/a-spiral-under-poetry-maya-oakes/sitemap.xml
