@@ -144,6 +144,17 @@ def tag_links(tags, prefix:)
   "<div class=\"poem-tags\" aria-label=\"Topics\">#{links}</div>"
 end
 
+def poem_illustration(slug, prefix:)
+  path = File.join(ROOT, "assets", "poems", "#{slug}.webp")
+  return "<!-- No original booklet illustration -->" unless File.exist?(path)
+
+  <<~HTML
+    <figure class="poem-illustration" aria-hidden="true">
+      <img src="#{prefix}assets/poems/#{slug}.webp" alt="" loading="lazy">
+    </figure>
+  HTML
+end
+
 inventory = CSV.read(File.join(ROOT, "poems.csv"), headers: true).each_with_object({}) do |row, rows|
   rows[row["slug"]] = row.to_h
 end
@@ -184,6 +195,8 @@ FileUtils.cp(File.join(ROOT, "assets", "logo.png"), File.join(asset_dir, "logo.p
 FileUtils.cp(File.join(ROOT, "assets", "styles.css"), File.join(asset_dir, "styles.css"))
 FileUtils.rm_rf(File.join(asset_dir, "booklet"))
 FileUtils.cp_r(File.join(ROOT, "assets", "booklet"), File.join(asset_dir, "booklet"))
+FileUtils.rm_rf(File.join(asset_dir, "poems"))
+FileUtils.cp_r(File.join(ROOT, "assets", "poems"), File.join(asset_dir, "poems"))
 site_js = File.read(File.join(ROOT, "assets", "site.js")).sub("__POEM_LINKS__", poem_links_json)
 File.write(File.join(asset_dir, "site.js"), site_js)
 File.write(File.join(OUTPUT, ".nojekyll"), "")
@@ -343,6 +356,7 @@ reader_contents = SECTIONS.map do |name, section|
         <p class="reader-position">#{format("%02d", entry["global_position"] + 1)} / #{format("%02d", map.size)}</p>
         <h2>#{escape(entry["title"])}</h2>
         <div class="poem-text">#{poem_lines(poem_text(entry["slug"]))}</div>
+        #{poem_illustration(entry["slug"], prefix: "../")}
         #{tag_links(entry["tags"], prefix: "../")}
         <a class="reader-permalink" href="../poems/#{entry["slug"]}/index.html">Permanent page</a>
       </article>
@@ -487,6 +501,7 @@ map.each do |entry|
         <h1>#{escape(entry["title"])}</h1>
       </header>
       <div class="poem-text" aria-label="Poem text">#{poem_lines(poem_text(entry["slug"]))}</div>
+      #{poem_illustration(entry["slug"], prefix: "../../")}
       #{tag_links(entry["tags"], prefix: "../../")}
       <footer class="poem-source">
         <a href="#{escape(entry["source_url"])}">View the original publication ↗</a>
