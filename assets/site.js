@@ -34,7 +34,8 @@ if (search) {
 const readerPoems = [...document.querySelectorAll("[data-reader-poem]")];
 const progressBar = document.querySelector("[data-reading-progress]");
 const currentTitle = document.querySelector("[data-reader-current]");
-const currentPercent = document.querySelector("[data-reader-percent]");
+const currentPage = document.querySelector("[data-reader-page]");
+const initialReaderTarget = window.location.hash;
 
 if (readerPoems.length) {
   const recordPosition = (poem) => {
@@ -43,7 +44,7 @@ if (readerPoems.length) {
     const target = `#${poem.id}`;
 
     currentTitle.textContent = poem.dataset.title;
-    currentPercent.textContent = `${percent}%`;
+    currentPage.textContent = poem.dataset.page;
     progressBar.style.width = `${percent}%`;
     window.localStorage.setItem("spiral-reading-position", target);
     window.history.replaceState(null, "", target);
@@ -58,6 +59,12 @@ if (readerPoems.length) {
   }, { rootMargin: "-20% 0px -55%", threshold: [0, 0.25, 0.6] });
 
   readerPoems.forEach((poem) => observer.observe(poem));
+
+  if (initialReaderTarget) {
+    window.addEventListener("load", () => {
+      document.querySelector(initialReaderTarget)?.scrollIntoView();
+    });
+  }
 }
 
 document.querySelectorAll("[data-resume-reading]").forEach((link) => {

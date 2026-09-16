@@ -150,7 +150,7 @@ def poem_illustration(slug, prefix:)
 
   <<~HTML
     <figure class="poem-illustration" aria-hidden="true">
-      <img src="#{prefix}assets/poems/#{slug}.webp" alt="" loading="lazy">
+      <img src="#{prefix}assets/poems/#{slug}.webp" alt="">
     </figure>
   HTML
 end
@@ -352,13 +352,13 @@ reader_contents = SECTIONS.map do |name, section|
 
   poems = entries.map do |entry|
     <<~HTML
-      <article class="reader-poem" id="#{entry["slug"]}" data-reader-poem data-title="#{escape(entry["title"])}">
-        <p class="reader-position">#{format("%02d", entry["global_position"] + 1)} / #{format("%02d", map.size)}</p>
+      <article class="reader-poem" id="#{entry["slug"]}" data-reader-poem data-title="#{escape(entry["title"])}" data-page="#{format("%02d", entry["global_position"] + 1)}">
         <h2>#{escape(entry["title"])}</h2>
         <div class="poem-text">#{poem_lines(poem_text(entry["slug"]))}</div>
         #{poem_illustration(entry["slug"], prefix: "../")}
         #{tag_links(entry["tags"], prefix: "../")}
         <a class="reader-permalink" href="../poems/#{entry["slug"]}/index.html">Permanent page</a>
+        <p class="reader-folio" aria-label="Page #{entry["global_position"] + 1} of #{map.size}">#{format("%02d", entry["global_position"] + 1)}</p>
       </article>
     HTML
   end.join
@@ -420,7 +420,7 @@ reader_body = <<~HTML
   </div>
   <aside class="reader-status" aria-live="polite">
     <span data-reader-current>Cover</span>
-    <span data-reader-percent>0%</span>
+    <span class="reader-page-count">Page <strong data-reader-page>00</strong> of #{format("%02d", map.size)}</span>
   </aside>
 HTML
 

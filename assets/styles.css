@@ -938,7 +938,6 @@ main {
   line-height: 0.98;
 }
 
-.reader-position,
 .reader-permalink {
   color: var(--muted);
   font-size: 0.68rem;
@@ -947,14 +946,19 @@ main {
   text-transform: uppercase;
 }
 
-.reader-position {
-  margin: 0 0 1.2rem;
-}
-
 .reader-permalink {
   display: inline-block;
   margin-top: 5rem;
   text-underline-offset: 0.25rem;
+}
+
+.reader-folio {
+  margin: 5rem 0 -4rem;
+  color: var(--muted);
+  font-family: var(--display);
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-align: center;
 }
 
 .reader-status {
@@ -978,6 +982,19 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.reader-page-count {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.reader-page-count strong {
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 0.86rem;
+  font-weight: 700;
 }
 
 .about-page,
