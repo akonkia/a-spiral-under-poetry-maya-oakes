@@ -4,8 +4,10 @@ require "nokogiri"
 require "pathname"
 require "json"
 require "uri"
+require "csv"
 
 root = Pathname.new(File.expand_path("../docs", __dir__))
+expected_poem_count = CSV.read(File.expand_path("../poems.csv", __dir__), headers: true).size
 site_url = "https://akonkia.github.io/a-spiral-under-poetry-maya-oakes"
 errors = []
 html_files = root.glob("**/*.html")
@@ -67,9 +69,9 @@ contents_links = reader.css("#contents .reader-toc-chapter li a")
 tagged_reader_poems = poems.count { |poem| poem.css(".poem-tags a").any? }
 page_numbers = poems.map { |poem| poem["data-page"] }
 folios = reader.css(".reader-folio").map(&:text).map(&:strip)
-errors << "reader contains #{poems.size} poems, expected 47" unless poems.size == 47
+errors << "reader contains #{poems.size} poems, expected #{expected_poem_count}" unless poems.size == expected_poem_count
 errors << "duplicate reader poem anchors" unless poems.map { |poem| poem["id"] }.uniq.size == poems.size
-errors << "contents contains #{contents_links.size} poems, expected 47" unless contents_links.size == 47
+errors << "contents contains #{contents_links.size} poems, expected #{expected_poem_count}" unless contents_links.size == expected_poem_count
 errors << "only #{tagged_reader_poems} reader poems have tags" unless tagged_reader_poems == poems.size
 errors << "reader page numbers are incomplete" unless page_numbers == (1..poems.size).map { |number| format("%02d", number) }
 errors << "reader folios do not match page numbers" unless folios == page_numbers
